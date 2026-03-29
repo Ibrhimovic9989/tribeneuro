@@ -33,6 +33,8 @@ SPLIT_ATTRIBUTES = {
     "Vanessen2023": "run",
     "Aliko2020": "task",
     "Li2022": "run",
+    "Richardson2018": "task",
+    "AbideRestingState": "site",
 }
 
 
@@ -105,7 +107,7 @@ class ExtractWordsFromAudio(EventsTransform):
             raise ValueError(f"Language {language} not supported")
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        compute_type = "float16"
+        compute_type = "float16" if device == "cuda" else "int8"
 
         with tempfile.TemporaryDirectory() as output_dir:
             logger.info("Running whisperx via uvx...")

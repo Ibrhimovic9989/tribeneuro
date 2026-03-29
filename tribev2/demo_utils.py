@@ -191,6 +191,7 @@ class TribeModel(TribeExperiment):
             Path(cache_folder).mkdir(parents=True, exist_ok=True)
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
+        checkpoint_dir_str = str(checkpoint_dir)
         checkpoint_dir = Path(checkpoint_dir)
         if checkpoint_dir.exists():
             config_path = checkpoint_dir / "config.yaml"
@@ -198,11 +199,31 @@ class TribeModel(TribeExperiment):
         else:
             from huggingface_hub import hf_hub_download
 
-            repo_id = str(checkpoint_dir)
+            repo_id = checkpoint_dir_str.replace("\\", "/")
             config_path = hf_hub_download(repo_id, "config.yaml")
             ckpt_path = hf_hub_download(repo_id, checkpoint_name)
+        # Patch YAML loader for cross-platform PosixPath/WindowsPath compat
+        import pathlib
+
+        _yaml_loader = yaml.UnsafeLoader
+
+        def _posix_path_constructor(loader, node):
+            if node.id == "scalar":
+                return pathlib.Path(loader.construct_scalar(node))
+            parts = loader.construct_sequence(node)
+            return pathlib.Path(*parts) if parts else pathlib.Path(".")
+
+        _yaml_loader.add_constructor(
+            "tag:yaml.org,2002:python/object/apply:pathlib.PosixPath",
+            _posix_path_constructor,
+        )
+        _yaml_loader.add_constructor(
+            "tag:yaml.org,2002:python/object/apply:pathlib.WindowsPath",
+            _posix_path_constructor,
+        )
+
         with open(config_path, "r") as f:
-            config = ConfDict(yaml.load(f, Loader=yaml.UnsafeLoader))
+            config = ConfDict(yaml.load(f, Loader=_yaml_loader))
         for modality in ["text", "audio", "video"]:
             config[f"data.{modality}_feature.infra.folder"] = cache_folder
             config[f"data.{modality}_feature.infra.cluster"] = cluster

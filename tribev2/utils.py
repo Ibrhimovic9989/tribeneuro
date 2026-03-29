@@ -29,6 +29,8 @@ FMRI_SPACES = {
     "Aliko2020": "MNICOLIN27",
     "Li2022": "MNICOLIN27",
     "Nastase2020": "MNI152NLIN2009C_ASYM_RES_01",
+    "Richardson2018": "MNI152NLIN2009C_ASYM_RES_01",
+    "AbideRestingState": "MNI152NLIN6_ASYM_RES_01",
 }
 RECORDING_DURATIONS = {
     "Algonauts2025Bold/sub-01": 66.4,
